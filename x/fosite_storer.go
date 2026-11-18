@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ory/hydra/v2/fosite"
+	"github.com/ory/hydra/v2/fosite/handler/ciba"
 	"github.com/ory/hydra/v2/fosite/handler/oauth2"
 	"github.com/ory/hydra/v2/fosite/handler/openid"
 	"github.com/ory/hydra/v2/fosite/handler/pkce"
@@ -26,6 +27,8 @@ type FositeStorer interface {
 	pkce.PKCERequestStorage
 	rfc7523.RFC7523KeyStorage
 	rfc8628.DeviceAuthStorage
+	fosite.PARStorageProvider
+	ciba.StorageProvider
 	verifiable.NonceManager
 	oauth2.ResourceOwnerPasswordCredentialsGrantStorage
 

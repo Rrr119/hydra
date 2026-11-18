@@ -61,6 +61,14 @@ const (
 
 	DeviceAuthPath         = "/oauth2/device/auth"
 	DeviceVerificationPath = "/oauth2/device/verify"
+
+	PARPath      = "/oauth2/par"
+	PARAliasPath = "/oauth2/pushed-authorization-request"
+
+	CIBAAuthPath         = "/oauth2/backchannel/authentication"
+	CIBAAuthAliasPath    = "/oauth2/backchannel/authenticate"
+	CIBAAuthShortPath    = "/oauth2/ciba/auth"
+	CIBAVerificationPath = "/oauth2/ciba/verify"
 )
 
 // Taken from https://github.com/ory/hydra/v2/fosite/blob/049ed1924cd0b41f12357b0fe617530c264421ac/handler/openid/flow_explicit_auth.go#L29
@@ -88,6 +96,10 @@ func NewHandler(r InternalRegistry) *Handler {
 func (h *Handler) SetPublicRoutes(public *httprouterx.RouterPublic, corsMiddleware func(http.Handler) http.Handler) {
 	public.OPTIONS(TokenPath, corsMiddleware(http.HandlerFunc(h.handleOptions)).ServeHTTP)
 	public.POST(TokenPath, corsMiddleware(http.HandlerFunc(h.oauth2TokenExchange)).ServeHTTP)
+	public.OPTIONS(PARPath, corsMiddleware(http.HandlerFunc(h.handleOptions)).ServeHTTP)
+	public.POST(PARPath, corsMiddleware(http.HandlerFunc(h.oAuth2PushedAuthorizationRequest)).ServeHTTP)
+	public.OPTIONS(PARAliasPath, corsMiddleware(http.HandlerFunc(h.handleOptions)).ServeHTTP)
+	public.POST(PARAliasPath, corsMiddleware(http.HandlerFunc(h.oAuth2PushedAuthorizationRequest)).ServeHTTP)
 
 	public.GET(AuthPath, h.oAuth2Authorize)
 	public.POST(AuthPath, h.oAuth2Authorize)
@@ -127,6 +139,12 @@ func (h *Handler) SetPublicRoutes(public *httprouterx.RouterPublic, corsMiddlewa
 
 	public.POST(DeviceAuthPath, h.oAuth2DeviceFlow)
 	public.GET(DeviceVerificationPath, h.performOAuth2DeviceVerificationFlow)
+
+	for _, path := range []string{CIBAAuthPath, CIBAAuthAliasPath, CIBAAuthShortPath} {
+		public.POST(path, corsMiddleware(http.HandlerFunc(h.oAuth2CIBAAuthentication)).ServeHTTP)
+		public.OPTIONS(path, corsMiddleware(http.HandlerFunc(h.handleOptions)).ServeHTTP)
+	}
+	public.GET(CIBAVerificationPath, h.handleOAuth2CIBAVerification)
 }
 
 func (h *Handler) SetAdminRoutes(admin *httprouterx.RouterAdmin) {
@@ -289,6 +307,21 @@ type oidcConfiguration struct {
 	// required: true
 	// example: https://playground.ory.sh/ory-hydra/public/oauth2/token
 	TokenURL string `json:"token_endpoint"`
+
+	// OAuth 2.0 Pushed Authorization Request Endpoint URL.
+	PushedAuthorizationRequestEndpoint string `json:"pushed_authorization_request_endpoint,omitempty"`
+
+	// Boolean value indicating whether the authorization server requires pushed authorization requests.
+	RequirePushedAuthorizationRequests bool `json:"require_pushed_authorization_requests"`
+
+	// OpenID Connect CIBA Backchannel Authentication Endpoint URL.
+	BackchannelAuthenticationEndpoint string `json:"backchannel_authentication_endpoint,omitempty"`
+
+	// CIBA token delivery modes supported by the authorization server.
+	BackchannelTokenDeliveryModesSupported []string `json:"backchannel_token_delivery_modes_supported,omitempty"`
+
+	// Boolean value indicating whether the CIBA user_code parameter is supported.
+	BackchannelUserCodeParameterSupported bool `json:"backchannel_user_code_parameter_supported"`
 
 	// OpenID Connect Well-Known JSON Web Keys URL
 	//
@@ -521,6 +554,11 @@ func (h *Handler) discoverOidcConfiguration(w http.ResponseWriter, r *http.Reque
 		AuthURL:                                h.c.OAuth2AuthURL(ctx).String(),
 		DeviceAuthorizationURL:                 h.c.OAuth2DeviceAuthorisationURL(ctx).String(),
 		TokenURL:                               h.c.OAuth2TokenURL(ctx).String(),
+		PushedAuthorizationRequestEndpoint:     urlx.AppendPaths(h.c.IssuerURL(ctx), PARPath).String(),
+		RequirePushedAuthorizationRequests:     false,
+		BackchannelAuthenticationEndpoint:      urlx.AppendPaths(h.c.IssuerURL(ctx), CIBAAuthPath).String(),
+		BackchannelTokenDeliveryModesSupported: []string{"poll"},
+		BackchannelUserCodeParameterSupported:  true,
 		JWKsURI:                                h.c.JWKSURL(ctx).String(),
 		RevocationEndpoint:                     urlx.AppendPaths(h.c.IssuerURL(ctx), RevocationPath).String(),
 		RegistrationEndpoint:                   h.c.OAuth2ClientRegistrationURL(ctx).String(),
@@ -533,7 +571,7 @@ func (h *Handler) discoverOidcConfiguration(w http.ResponseWriter, r *http.Reque
 		IDTokenSigningAlgValuesSupported:       []string{key.Algorithm},
 		IDTokenSignedResponseAlg:               []string{key.Algorithm},
 		UserinfoSignedResponseAlg:              []string{key.Algorithm},
-		GrantTypesSupported:                    []string{"authorization_code", "implicit", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code"},
+		GrantTypesSupported:                    []string{"authorization_code", "implicit", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", string(fosite.GrantTypeCIBA)},
 		ResponseModesSupported:                 []string{"query", "fragment", "form_post"},
 		UserinfoSigningAlgValuesSupported:      []string{"none", key.Algorithm},
 		RequestParameterSupported:              true,

@@ -26,6 +26,7 @@ import (
 	"github.com/ory/hydra/v2/driver/config"
 	"github.com/ory/hydra/v2/fosite"
 	"github.com/ory/hydra/v2/fosite/compose"
+	"github.com/ory/hydra/v2/fosite/handler/ciba"
 	foauth2 "github.com/ory/hydra/v2/fosite/handler/oauth2"
 	"github.com/ory/hydra/v2/fosite/handler/openid"
 	"github.com/ory/hydra/v2/fosite/handler/pkce"
@@ -161,6 +162,14 @@ func (m *RegistrySQL) PKCERequestStorage() pkce.PKCERequestStorage {
 // DeviceAuthStorage implements rfc8628.DeviceAuthStorageProvider
 func (m *RegistrySQL) DeviceAuthStorage() rfc8628.DeviceAuthStorage {
 	return m.OAuth2Storage()
+}
+
+func (m *RegistrySQL) PARStorage() fosite.PARStorage {
+	return m.OAuth2Storage().PARStorage()
+}
+
+func (m *RegistrySQL) CIBAStorage() ciba.Storage {
+	return m.OAuth2Storage().CIBAStorage()
 }
 
 // RFC7523KeyStorage implements rfc7523.RFC7523KeyStorageProvider

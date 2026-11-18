@@ -27,6 +27,8 @@ const (
 	DeviceCode    TokenType = "device_code"
 	// PushedAuthorizeRequestContext represents the PAR context object
 	PushedAuthorizeRequestContext TokenType = "par_context"
+	// CIBARequestContext represents the CIBA authentication request context.
+	CIBARequestContext TokenType = "ciba_request"
 
 	GrantTypeImplicit          GrantType = "implicit"
 	GrantTypeRefreshToken      GrantType = "refresh_token"
@@ -35,6 +37,7 @@ const (
 	GrantTypeClientCredentials GrantType = "client_credentials"
 	GrantTypeJWTBearer         GrantType = "urn:ietf:params:oauth:grant-type:jwt-bearer"  //nolint:gosec // this is not a hardcoded credential
 	GrantTypeDeviceCode        GrantType = "urn:ietf:params:oauth:grant-type:device_code" //nolint:gosec // this is not a hardcoded credential
+	GrantTypeCIBA              GrantType = "urn:openid:params:grant-type:ciba"            //nolint:gosec // this is not a hardcoded credential
 
 	BearerAccessToken string = "bearer"
 )
@@ -42,6 +45,10 @@ const (
 // OAuth2Provider is an interface that enables you to write OAuth2 handlers with only a few lines of code.
 // Check Fosite for an implementation of this interface.
 type OAuth2Provider interface {
+	// AuthenticateClient authenticates an OAuth 2.0 client using the configured
+	// client authentication strategy.
+	AuthenticateClient(ctx context.Context, req *http.Request, form url.Values) (Client, error)
+
 	// NewAuthorizeRequest returns an AuthorizeRequest.
 	//
 	// The following specs must be considered in any implementation of this method:

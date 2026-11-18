@@ -26,6 +26,7 @@ import (
 	"github.com/ory/hydra/v2/client"
 	"github.com/ory/hydra/v2/flow"
 	"github.com/ory/hydra/v2/fosite"
+	"github.com/ory/hydra/v2/fosite/handler/ciba"
 	"github.com/ory/hydra/v2/fosite/handler/openid"
 	"github.com/ory/hydra/v2/fosite/token/jwt"
 	"github.com/ory/hydra/v2/x"
@@ -664,6 +665,108 @@ func (s *defaultStrategy) verifyConsent(ctx context.Context, _ http.ResponseWrit
 
 	if f.SessionIDToken == nil {
 		f.SessionIDToken = map[string]interface{}{}
+	}
+
+	return f, nil
+}
+
+func (s *defaultStrategy) HandleOAuth2CIBARequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (_ *flow.Flow, err error) {
+	ctx, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("").Start(ctx, "DefaultStrategy.HandleOAuth2CIBARequest")
+	defer otelx.End(span, &err)
+
+	if verifier := r.URL.Query().Get("login_verifier"); verifier != "" {
+		f, err := flow.DecodeAndInvalidateLoginVerifier(ctx, s.r, verifier)
+		if err != nil {
+			return nil, err
+		}
+		if f.LoginError.IsError() {
+			if f.CIBARequestID != "" {
+				_ = s.r.OAuth2Storage().CIBAStorage().DenyCIBARequest(ctx, f.CIBARequestID)
+			}
+			f.LoginError.SetDefaults(flow.LoginRequestDeniedErrorName)
+			return nil, errors.WithStack(f.LoginError.ToRFCError())
+		}
+
+		if f.ForceSubjectIdentifier != "" {
+			if err := s.r.ObfuscatedSubjectManager().CreateForcedObfuscatedLoginSession(ctx, &ForcedObfuscatedLoginSession{
+				Subject:           f.Subject,
+				ClientID:          f.ClientID,
+				SubjectObfuscated: f.ForceSubjectIdentifier,
+			}); err != nil {
+				return nil, err
+			}
+		}
+
+		rememberFor := s.r.Config().GetAuthenticationSessionLifespan(ctx)
+		if f.LoginRememberFor > 0 {
+			rememberFor = min(time.Second*time.Duration(f.LoginRememberFor), rememberFor)
+		}
+		if !f.LoginSkip {
+			if err := s.r.LoginManager().ConfirmLoginSession(ctx, &flow.LoginSession{
+				ID:                        f.SessionID.String(),
+				AuthenticatedAt:           f.LoginAuthenticatedAt,
+				Subject:                   f.Subject,
+				IdentityProviderSessionID: f.IdentityProviderSessionID,
+				Remember:                  true,
+				ExpiresAt:                 sqlxx.NullTime(time.Now().Add(rememberFor).UTC()),
+			}); err != nil {
+				return nil, err
+			}
+		}
+
+		f.ToStateConsentUnused(
+			flow.WithConsentRequestID(strings.ReplaceAll(uuid.New(), "-", "")),
+			flow.WithConsentSkip(false),
+			flow.WithConsentCSRF(strings.ReplaceAll(uuid.New(), "-", "")),
+		)
+		consentChallenge, err := f.ToConsentChallenge(ctx, s.r)
+		if err != nil {
+			return nil, err
+		}
+		http.Redirect(
+			w, r,
+			urlx.SetQuery(s.r.Config().ConsentURL(ctx), url.Values{"consent_challenge": {consentChallenge}}).String(),
+			http.StatusFound,
+		)
+		return nil, errors.WithStack(ErrUserRedirected)
+	}
+
+	verifier := r.URL.Query().Get("consent_verifier")
+	if verifier == "" {
+		return nil, errors.WithStack(fosite.ErrInvalidRequest.WithHint("The CIBA verification request does not contain a login_verifier or consent_verifier."))
+	}
+
+	f, err := flow.DecodeAndInvalidateConsentVerifier(ctx, s.r, verifier)
+	if err != nil {
+		return nil, err
+	}
+	if f.CIBARequestID == "" {
+		return nil, errors.WithStack(fosite.ErrInvalidRequest.WithHint("The consent verifier does not belong to a CIBA request."))
+	}
+	if f.ConsentError.IsError() {
+		f.ConsentError.SetDefaults(flow.ConsentRequestDeniedErrorName)
+		_ = s.r.OAuth2Storage().CIBAStorage().DenyCIBARequest(ctx, f.CIBARequestID)
+		return nil, errors.WithStack(f.ConsentError.ToRFCError())
+	}
+	if err := s.r.ConsentManager().CreateConsentSession(ctx, f); errors.Is(err, sqlcon.ErrUniqueViolation()) {
+		return nil, errors.WithStack(fosite.ErrAccessDenied.WithHint("The consent verifier has already been used."))
+	} else if err != nil {
+		return nil, err
+	}
+
+	if err := s.r.OAuth2Storage().CIBAStorage().ApproveCIBARequest(ctx, f.CIBARequestID, ciba.Approval{
+		ClientID:         f.ClientID,
+		Subject:          f.Subject,
+		GrantedScopes:    f.GrantedScope,
+		GrantedAudience:  f.GrantedAudience,
+		AuthTime:         time.Time(f.LoginAuthenticatedAt),
+		RequestedAt:      f.RequestedAt,
+		ACR:              f.ACR,
+		AMR:              f.AMR,
+		IDTokenClaims:    f.SessionIDToken,
+		AccessTokenExtra: f.SessionAccessToken,
+	}); err != nil {
+		return nil, err
 	}
 
 	return f, nil

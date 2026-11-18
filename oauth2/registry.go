@@ -26,6 +26,7 @@ type InternalRegistry interface {
 	logrusx.Provider
 	otelx.Provider
 	x.Transactor
+	x.NetworkProvider
 	consent.Registry
 	Registry
 	FlowCipher() *aead.XChaCha20Poly1305

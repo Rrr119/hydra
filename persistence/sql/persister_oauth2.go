@@ -255,15 +255,13 @@ func (p *Persister) sqlSchemaFromRequest(ctx context.Context, signature string, 
 
 	var challenge sql.NullString
 	rr, ok := r.GetSession().(*oauth2.Session)
-	if !ok && r.GetSession() != nil {
-		return nil, errors.Errorf("Expected request to be of type *Session, but got: %T", r.GetSession())
-	} else if ok {
+	if ok {
 		if len(rr.ConsentChallenge) > 0 {
 			challenge = sql.NullString{Valid: true, String: rr.ConsentChallenge}
 		}
 	}
 
-	session, err := json.Marshal(rr)
+	session, err := json.Marshal(r.GetSession())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

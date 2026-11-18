@@ -95,5 +95,6 @@ func ComposeAllEnabled(config *fosite.Config, storage fosite.Storage, key interf
 
 		OAuth2PKCEFactory,
 		PushedAuthorizeHandlerFactory,
+		CIBAFactory,
 	)
 }

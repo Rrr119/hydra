@@ -9,6 +9,7 @@ import (
 	"hash"
 	"html/template"
 	"net/url"
+	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
 
@@ -43,6 +44,7 @@ type (
 		tokenIntrospectionHandlers fosite.TokenIntrospectionHandlers
 		revocationHandlers         fosite.RevocationHandlers
 		deviceEndpointHandlers     fosite.DeviceEndpointHandlers
+		pushedAuthorizeHandlers    fosite.PushedAuthorizeEndpointHandlers
 		jwksFetcherStrategy        fosite.JWKSFetcherStrategy
 
 		*config.DefaultProvider
@@ -71,6 +73,8 @@ var (
 		compose.RFC8628DeviceFactory,
 		compose.RFC8628DeviceAuthorizationTokenFactory,
 		compose.OpenIDConnectDeviceFactory,
+		compose.PushedAuthorizeHandlerFactory,
+		compose.CIBAFactory,
 	}
 )
 
@@ -103,6 +107,9 @@ func (c *Config) LoadDefaultHandlers(storage fosite.Storage, strategy interface{
 		}
 		if dh, ok := res.(fosite.DeviceEndpointHandler); ok {
 			c.deviceEndpointHandlers.Append(dh)
+		}
+		if ph, ok := res.(fosite.PushedAuthorizeEndpointHandler); ok {
+			c.pushedAuthorizeHandlers.Append(ph)
 		}
 	}
 }
@@ -139,6 +146,30 @@ func (c *Config) GetRevocationHandlers(context.Context) fosite.RevocationHandler
 // GetDeviceEndpointHandlers returns the deviceEndpointHandlers
 func (c *Config) GetDeviceEndpointHandlers(context.Context) fosite.DeviceEndpointHandlers {
 	return c.deviceEndpointHandlers
+}
+
+func (c *Config) GetPushedAuthorizeEndpointHandlers(context.Context) fosite.PushedAuthorizeEndpointHandlers {
+	return c.pushedAuthorizeHandlers
+}
+
+func (c *Config) GetPushedAuthorizeRequestURIPrefix(context.Context) string {
+	return "urn:ietf:params:oauth:request_uri:"
+}
+
+func (c *Config) GetPushedAuthorizeContextLifespan(context.Context) time.Duration {
+	return 90 * time.Second
+}
+
+func (c *Config) EnforcePushedAuthorize(context.Context) bool {
+	return false
+}
+
+func (c *Config) GetCIBARequestLifespan(context.Context) time.Duration {
+	return 10 * time.Minute
+}
+
+func (c *Config) GetCIBAInterval(context.Context) time.Duration {
+	return 5 * time.Second
 }
 
 func (c *Config) GetGrantTypeJWTBearerCanSkipClientAuth(context.Context) bool {

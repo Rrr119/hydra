@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/ory/hydra/v2/fosite"
+	"github.com/ory/hydra/v2/fosite/handler/ciba"
 	"github.com/ory/hydra/v2/fosite/handler/oauth2"
 	"github.com/ory/hydra/v2/fosite/handler/openid"
 	"github.com/ory/hydra/v2/fosite/handler/pkce"
@@ -64,6 +65,7 @@ type MemoryStore struct {
 	// Public keys to check signature in auth grant jwt assertion.
 	IssuerPublicKeys map[string]IssuerPublicKeys
 	PARSessions      map[string]fosite.AuthorizeRequester
+	CIBARequests     map[string]*ciba.Request
 
 	clientsMutex                sync.RWMutex
 	authorizeCodesMutex         sync.RWMutex
@@ -79,6 +81,7 @@ type MemoryStore struct {
 	deviceAuthsRequestIDsMutex  sync.RWMutex
 	issuerPublicKeysMutex       sync.RWMutex
 	parSessionsMutex            sync.RWMutex
+	cibaRequestsMutex           sync.RWMutex
 }
 
 func NewMemoryStore() *MemoryStore {
@@ -98,6 +101,7 @@ func NewMemoryStore() *MemoryStore {
 		BlacklistedJTIs:        make(map[string]time.Time),
 		IssuerPublicKeys:       make(map[string]IssuerPublicKeys),
 		PARSessions:            make(map[string]fosite.AuthorizeRequester),
+		CIBARequests:           make(map[string]*ciba.Request),
 	}
 }
 
@@ -138,6 +142,10 @@ func (s *MemoryStore) PARStorage() fosite.PARStorage {
 }
 
 func (s *MemoryStore) DeviceAuthStorage() rfc8628.DeviceAuthStorage {
+	return s
+}
+
+func (s *MemoryStore) CIBAStorage() ciba.Storage {
 	return s
 }
 
@@ -210,6 +218,7 @@ func NewExampleStore() *MemoryStore {
 		UserCodesRequestIDs:    make(map[string]string),
 		IssuerPublicKeys:       map[string]IssuerPublicKeys{},
 		PARSessions:            map[string]fosite.AuthorizeRequester{},
+		CIBARequests:           map[string]*ciba.Request{},
 	}
 }
 
@@ -572,6 +581,84 @@ func (s *MemoryStore) DeletePARSession(ctx context.Context, requestURI string) (
 	defer s.parSessionsMutex.Unlock()
 
 	delete(s.PARSessions, requestURI)
+	return nil
+}
+
+func (s *MemoryStore) CreateCIBARequest(_ context.Context, signature string, request *ciba.Request) error {
+	s.cibaRequestsMutex.Lock()
+	defer s.cibaRequestsMutex.Unlock()
+	s.CIBARequests[ciba.PendingKey(signature)] = request
+	return nil
+}
+
+func (s *MemoryStore) GetCIBARequest(_ context.Context, signature string, _ fosite.Session) (*ciba.Request, error) {
+	s.cibaRequestsMutex.RLock()
+	defer s.cibaRequestsMutex.RUnlock()
+
+	for _, candidate := range []struct {
+		key   string
+		state ciba.State
+	}{
+		{ciba.ApprovedKey(signature), ciba.StateApproved},
+		{ciba.PendingKey(signature), ciba.StatePending},
+		{ciba.DeniedKey(signature), ciba.StateDenied},
+	} {
+		if request, ok := s.CIBARequests[candidate.key]; ok {
+			request.State = candidate.state
+			return request, nil
+		}
+	}
+	return nil, fosite.ErrNotFound
+}
+
+func (s *MemoryStore) ApproveCIBARequest(_ context.Context, signature string, approval ciba.Approval) error {
+	s.cibaRequestsMutex.Lock()
+	defer s.cibaRequestsMutex.Unlock()
+
+	request, ok := s.CIBARequests[ciba.PendingKey(signature)]
+	if !ok {
+		return fosite.ErrNotFound
+	}
+	session := openid.NewDefaultSession()
+	session.Subject = approval.Subject
+	session.Claims.Subject = approval.Subject
+	session.Claims.AuthTime = approval.AuthTime
+	session.Claims.RequestedAt = approval.RequestedAt
+	session.Claims.AuthenticationContextClassReference = approval.ACR
+	session.Claims.AuthenticationMethodsReferences = approval.AMR
+	session.Claims.Extra = approval.IDTokenClaims
+
+	request.State = ciba.StateApproved
+	request.GrantedScope = approval.GrantedScopes
+	request.GrantedAudience = approval.GrantedAudience
+	request.SetSession(session)
+	delete(s.CIBARequests, ciba.PendingKey(signature))
+	s.CIBARequests[ciba.ApprovedKey(signature)] = request
+	return nil
+}
+
+func (s *MemoryStore) DenyCIBARequest(_ context.Context, signature string) error {
+	s.cibaRequestsMutex.Lock()
+	defer s.cibaRequestsMutex.Unlock()
+
+	request, ok := s.CIBARequests[ciba.PendingKey(signature)]
+	if !ok {
+		return fosite.ErrNotFound
+	}
+	request.State = ciba.StateDenied
+	delete(s.CIBARequests, ciba.PendingKey(signature))
+	s.CIBARequests[ciba.DeniedKey(signature)] = request
+	return nil
+}
+
+func (s *MemoryStore) ConsumeCIBARequest(_ context.Context, signature string) error {
+	s.cibaRequestsMutex.Lock()
+	defer s.cibaRequestsMutex.Unlock()
+
+	if _, ok := s.CIBARequests[ciba.ApprovedKey(signature)]; !ok {
+		return fosite.ErrNotFound
+	}
+	delete(s.CIBARequests, ciba.ApprovedKey(signature))
 	return nil
 }
 

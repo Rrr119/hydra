@@ -1,7 +1,12 @@
 {
   "authorization_endpoint": "http://hydra.localhost/oauth2/auth",
+  "backchannel_authentication_endpoint": "http://hydra.localhost/oauth2/backchannel/authentication",
   "backchannel_logout_session_supported": true,
   "backchannel_logout_supported": true,
+  "backchannel_token_delivery_modes_supported": [
+    "poll"
+  ],
+  "backchannel_user_code_parameter_supported": true,
   "claims_parameter_supported": false,
   "claims_supported": [
     "sub"
@@ -44,10 +49,12 @@
     "implicit",
     "client_credentials",
     "refresh_token",
-    "urn:ietf:params:oauth:grant-type:device_code"
+    "urn:ietf:params:oauth:grant-type:device_code",
+    "urn:openid:params:grant-type:ciba"
   ],
   "issuer": "http://hydra.localhost",
   "jwks_uri": "http://hydra.localhost/.well-known/jwks.json",
+  "pushed_authorization_request_endpoint": "http://hydra.localhost/oauth2/par",
   "registration_endpoint": "http://client-register/registration",
   "request_object_signing_alg_values_supported": [
     "none",
@@ -56,6 +63,7 @@
   ],
   "request_parameter_supported": true,
   "request_uri_parameter_supported": true,
+  "require_pushed_authorization_requests": false,
   "require_request_uri_registration": true,
   "response_modes_supported": [
     "query",

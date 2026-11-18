@@ -242,6 +242,9 @@ type Flow struct {
 	// DeviceHandledAt contains the timestamp the device user_code verification request was handled
 	DeviceHandledAt sqlxx.NullTime `db:"-" json:"dh,omitempty"`
 
+	// CIBARequestID identifies the CIBA authentication request backing this flow.
+	CIBARequestID string `db:"-" json:"cba,omitempty"`
+
 	// ConsentRequestID is the identifier of the consent request.
 	// The database column should be named `consent_request_id`, but is not for historical reasons.
 	ConsentRequestID sqlxx.NullString `db:"consent_challenge_id" json:"cc,omitempty"`

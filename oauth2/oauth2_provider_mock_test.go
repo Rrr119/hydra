@@ -10,6 +10,7 @@ package oauth2_test
 import (
 	context "context"
 	http "net/http"
+	url "net/url"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -38,6 +39,21 @@ func NewMockOAuth2Provider(ctrl *gomock.Controller) *MockOAuth2Provider {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOAuth2Provider) EXPECT() *MockOAuth2ProviderMockRecorder {
 	return m.recorder
+}
+
+// AuthenticateClient mocks base method.
+func (m *MockOAuth2Provider) AuthenticateClient(arg0 context.Context, arg1 *http.Request, arg2 url.Values) (fosite.Client, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AuthenticateClient", arg0, arg1, arg2)
+	ret0, _ := ret[0].(fosite.Client)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AuthenticateClient indicates an expected call of AuthenticateClient.
+func (mr *MockOAuth2ProviderMockRecorder) AuthenticateClient(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuthenticateClient", reflect.TypeOf((*MockOAuth2Provider)(nil).AuthenticateClient), arg0, arg1, arg2)
 }
 
 // IntrospectToken mocks base method.

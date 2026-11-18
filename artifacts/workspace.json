@@ -1,0 +1,17 @@
+{
+  "root": "/home/dev/feedback/uid24399",
+  "B": "/home/dev/feedback/uid24399",
+  "sha": "4174065ffb052799890f7480f5360a877a67ffc1",
+  "wslDistro": "Ubuntu-26.04",
+  "source": {
+    "owner": "ory",
+    "repo": "hydra",
+    "sha": "4174065ffb052799890f7480f5360a877a67ffc1"
+  },
+  "fork": {
+    "owner": "Rrr119",
+    "repo": "hydra",
+    "cloneUrl": "https://github.com/Rrr119/hydra.git"
+  },
+  "at": "2026-11-17T21:06:11.034Z"
+}

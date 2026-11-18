@@ -333,6 +333,16 @@ type PushedAuthorizeRequestConfigProvider interface {
 	EnforcePushedAuthorize(ctx context.Context) bool
 }
 
+// CIBARequestLifespanProvider returns the lifespan of a CIBA authentication request.
+type CIBARequestLifespanProvider interface {
+	GetCIBARequestLifespan(ctx context.Context) time.Duration
+}
+
+// CIBAIntervalProvider returns the minimum polling interval for CIBA.
+type CIBAIntervalProvider interface {
+	GetCIBAInterval(ctx context.Context) time.Duration
+}
+
 // DeviceEndpointHandlersProvider returns the provider for setting up the Device handlers.
 type DeviceEndpointHandlersProvider interface {
 	// GetDeviceEndpointHandlers returns the handlers.

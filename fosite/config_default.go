@@ -237,6 +237,12 @@ type Config struct {
 	// IsPushedAuthorizeEnforced enforces pushed authorization request for /authorize
 	IsPushedAuthorizeEnforced bool
 
+	// CIBARequestLifespan is the lifespan of a CIBA authentication request.
+	CIBARequestLifespan time.Duration
+
+	// CIBAInterval is the minimum polling interval for CIBA.
+	CIBAInterval time.Duration
+
 	// UserCodeLength defines the length of the user_code
 	UserCodeLength int
 
@@ -544,6 +550,22 @@ func (c *Config) GetPushedAuthorizeContextLifespan(ctx context.Context) time.Dur
 // must contain the PAR request_uri.
 func (c *Config) EnforcePushedAuthorize(ctx context.Context) bool {
 	return c.IsPushedAuthorizeEnforced
+}
+
+// GetCIBARequestLifespan returns the lifespan of a CIBA authentication request.
+func (c *Config) GetCIBARequestLifespan(context.Context) time.Duration {
+	if c.CIBARequestLifespan <= 0 {
+		return 10 * time.Minute
+	}
+	return c.CIBARequestLifespan
+}
+
+// GetCIBAInterval returns the minimum polling interval for CIBA.
+func (c *Config) GetCIBAInterval(context.Context) time.Duration {
+	if c.CIBAInterval <= 0 {
+		return 5 * time.Second
+	}
+	return c.CIBAInterval
 }
 
 // GetDeviceVerificationURL returns the device verification URL

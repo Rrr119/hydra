@@ -89,6 +89,7 @@ Ory Hydra implements Open Standards set by the IETF:
 - [OAuth 2.0 Dynamic Client Registration Protocol](https://datatracker.ietf.org/doc/html/rfc7591)
 - [OAuth 2.0 Dynamic Client Registration Management Protocol](https://datatracker.ietf.org/doc/html/rfc7592)
 - [Proof Key for Code Exchange by OAuth Public Clients](https://tools.ietf.org/html/rfc7636)
+- [OAuth 2.0 Pushed Authorization Requests](https://datatracker.ietf.org/doc/html/rfc9126)
 - [JSON Web Token (JWT) Profile for OAuth 2.0 Client Authentication and Authorization Grants](https://tools.ietf.org/html/rfc7523)
 
 and the OpenID Foundation:
@@ -98,6 +99,10 @@ and the OpenID Foundation:
 - [OpenID Connect Dynamic Client Registration 1.0](https://openid.net/specs/openid-connect-registration-1_0.html)
 - [OpenID Connect Front-Channel Logout 1.0](https://openid.net/specs/openid-connect-frontchannel-1_0.html)
 - [OpenID Connect Back-Channel Logout 1.0](https://openid.net/specs/openid-connect-backchannel-1_0.html)
+- [OpenID Connect Client-Initiated Backchannel Authentication (CIBA) 1.0](https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html)
+
+See [Pushed Authorization Requests and CIBA](docs/oauth2-par-ciba.md) for
+endpoint examples and the consent integration contract.
 
 ### OpenID Connect Certified
 

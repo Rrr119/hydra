@@ -24,10 +24,16 @@ var _ MappedNullable = &OidcConfiguration{}
 type OidcConfiguration struct {
 	// OAuth 2.0 Authorization Endpoint URL
 	AuthorizationEndpoint string `json:"authorization_endpoint"`
+	// OpenID Connect CIBA Backchannel Authentication Endpoint URL.
+	BackchannelAuthenticationEndpoint *string `json:"backchannel_authentication_endpoint,omitempty"`
 	// OpenID Connect Back-Channel Logout Session Required  Boolean value specifying whether the OP can pass a sid (session ID) Claim in the Logout Token to identify the RP session with the OP. If supported, the sid Claim is also included in ID Tokens issued by the OP
 	BackchannelLogoutSessionSupported *bool `json:"backchannel_logout_session_supported,omitempty"`
 	// OpenID Connect Back-Channel Logout Supported  Boolean value specifying whether the OP supports back-channel logout, with true indicating support.
 	BackchannelLogoutSupported *bool `json:"backchannel_logout_supported,omitempty"`
+	// CIBA token delivery modes supported by the authorization server.
+	BackchannelTokenDeliveryModesSupported []string `json:"backchannel_token_delivery_modes_supported,omitempty"`
+	// Boolean value indicating whether the CIBA user_code parameter is supported.
+	BackchannelUserCodeParameterSupported *bool `json:"backchannel_user_code_parameter_supported,omitempty"`
 	// OpenID Connect Claims Parameter Parameter Supported  Boolean value specifying whether the OP supports use of the claims parameter, with true indicating support.
 	ClaimsParameterSupported *bool `json:"claims_parameter_supported,omitempty"`
 	// OpenID Connect Supported Claims  JSON array containing a list of the Claim Names of the Claims that the OpenID Provider MAY be able to supply values for. Note that for privacy or other reasons, this might not be an exhaustive list.
@@ -58,6 +64,8 @@ type OidcConfiguration struct {
 	JwksUri string `json:"jwks_uri"`
 	// OpenID Connect Dynamic Client Registration Endpoint URL
 	RegistrationEndpoint *string `json:"registration_endpoint,omitempty"`
+	// OAuth 2.0 Pushed Authorization Request Endpoint URL.
+	PushedAuthorizationRequestEndpoint *string `json:"pushed_authorization_request_endpoint,omitempty"`
 	// OpenID Connect Supported Request Object Signing Algorithms  JSON array containing a list of the JWS signing algorithms (alg values) supported by the OP for Request Objects, which are described in Section 6.1 of OpenID Connect Core 1.0 [OpenID.Core]. These algorithms are used both when the Request Object is passed by value (using the request parameter) and when it is passed by reference (using the request_uri parameter).
 	RequestObjectSigningAlgValuesSupported []string `json:"request_object_signing_alg_values_supported,omitempty"`
 	// OpenID Connect Request Parameter Supported  Boolean value specifying whether the OP supports use of the request parameter, with true indicating support.
@@ -66,6 +74,8 @@ type OidcConfiguration struct {
 	RequestUriParameterSupported *bool `json:"request_uri_parameter_supported,omitempty"`
 	// OpenID Connect Requires Request URI Registration  Boolean value specifying whether the OP requires any request_uri values used to be pre-registered using the request_uris registration parameter.
 	RequireRequestUriRegistration *bool `json:"require_request_uri_registration,omitempty"`
+	// Boolean value indicating whether the authorization server requires pushed authorization requests.
+	RequirePushedAuthorizationRequests *bool `json:"require_pushed_authorization_requests,omitempty"`
 	// OAuth 2.0 Supported Response Modes  JSON array containing a list of the OAuth 2.0 response_mode values that this OP supports.
 	ResponseModesSupported []string `json:"response_modes_supported,omitempty"`
 	// OAuth 2.0 Supported Response Types  JSON array containing a list of the OAuth 2.0 response_type values that this OP supports. Dynamic OpenID Providers MUST support the code, id_token, and the token id_token Response Type values.
@@ -141,6 +151,34 @@ func (o *OidcConfiguration) SetAuthorizationEndpoint(v string) {
 	o.AuthorizationEndpoint = v
 }
 
+// GetBackchannelAuthenticationEndpoint returns the BackchannelAuthenticationEndpoint field value if set, zero value otherwise.
+func (o *OidcConfiguration) GetBackchannelAuthenticationEndpoint() string {
+	if o == nil || IsNil(o.BackchannelAuthenticationEndpoint) {
+		var ret string
+		return ret
+	}
+	return *o.BackchannelAuthenticationEndpoint
+}
+
+// GetBackchannelAuthenticationEndpointOk returns a tuple with the BackchannelAuthenticationEndpoint field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *OidcConfiguration) GetBackchannelAuthenticationEndpointOk() (*string, bool) {
+	if o == nil || IsNil(o.BackchannelAuthenticationEndpoint) {
+		return nil, false
+	}
+	return o.BackchannelAuthenticationEndpoint, true
+}
+
+// HasBackchannelAuthenticationEndpoint returns a boolean if a field has been set.
+func (o *OidcConfiguration) HasBackchannelAuthenticationEndpoint() bool {
+	return o != nil && !IsNil(o.BackchannelAuthenticationEndpoint)
+}
+
+// SetBackchannelAuthenticationEndpoint gets a reference to the given string and assigns it to the BackchannelAuthenticationEndpoint field.
+func (o *OidcConfiguration) SetBackchannelAuthenticationEndpoint(v string) {
+	o.BackchannelAuthenticationEndpoint = &v
+}
+
 // GetBackchannelLogoutSessionSupported returns the BackchannelLogoutSessionSupported field value if set, zero value otherwise.
 func (o *OidcConfiguration) GetBackchannelLogoutSessionSupported() bool {
 	if o == nil || IsNil(o.BackchannelLogoutSessionSupported) {
@@ -203,6 +241,62 @@ func (o *OidcConfiguration) HasBackchannelLogoutSupported() bool {
 // SetBackchannelLogoutSupported gets a reference to the given bool and assigns it to the BackchannelLogoutSupported field.
 func (o *OidcConfiguration) SetBackchannelLogoutSupported(v bool) {
 	o.BackchannelLogoutSupported = &v
+}
+
+// GetBackchannelTokenDeliveryModesSupported returns the BackchannelTokenDeliveryModesSupported field value if set, zero value otherwise.
+func (o *OidcConfiguration) GetBackchannelTokenDeliveryModesSupported() []string {
+	if o == nil || IsNil(o.BackchannelTokenDeliveryModesSupported) {
+		var ret []string
+		return ret
+	}
+	return o.BackchannelTokenDeliveryModesSupported
+}
+
+// GetBackchannelTokenDeliveryModesSupportedOk returns a tuple with the BackchannelTokenDeliveryModesSupported field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *OidcConfiguration) GetBackchannelTokenDeliveryModesSupportedOk() ([]string, bool) {
+	if o == nil || IsNil(o.BackchannelTokenDeliveryModesSupported) {
+		return nil, false
+	}
+	return o.BackchannelTokenDeliveryModesSupported, true
+}
+
+// HasBackchannelTokenDeliveryModesSupported returns a boolean if a field has been set.
+func (o *OidcConfiguration) HasBackchannelTokenDeliveryModesSupported() bool {
+	return o != nil && !IsNil(o.BackchannelTokenDeliveryModesSupported)
+}
+
+// SetBackchannelTokenDeliveryModesSupported sets field value
+func (o *OidcConfiguration) SetBackchannelTokenDeliveryModesSupported(v []string) {
+	o.BackchannelTokenDeliveryModesSupported = v
+}
+
+// GetBackchannelUserCodeParameterSupported returns the BackchannelUserCodeParameterSupported field value if set, zero value otherwise.
+func (o *OidcConfiguration) GetBackchannelUserCodeParameterSupported() bool {
+	if o == nil || IsNil(o.BackchannelUserCodeParameterSupported) {
+		var ret bool
+		return ret
+	}
+	return *o.BackchannelUserCodeParameterSupported
+}
+
+// GetBackchannelUserCodeParameterSupportedOk returns a tuple with the BackchannelUserCodeParameterSupported field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *OidcConfiguration) GetBackchannelUserCodeParameterSupportedOk() (*bool, bool) {
+	if o == nil || IsNil(o.BackchannelUserCodeParameterSupported) {
+		return nil, false
+	}
+	return o.BackchannelUserCodeParameterSupported, true
+}
+
+// HasBackchannelUserCodeParameterSupported returns a boolean if a field has been set.
+func (o *OidcConfiguration) HasBackchannelUserCodeParameterSupported() bool {
+	return o != nil && !IsNil(o.BackchannelUserCodeParameterSupported)
+}
+
+// SetBackchannelUserCodeParameterSupported gets a reference to the given bool and assigns it to the BackchannelUserCodeParameterSupported field.
+func (o *OidcConfiguration) SetBackchannelUserCodeParameterSupported(v bool) {
+	o.BackchannelUserCodeParameterSupported = &v
 }
 
 // GetClaimsParameterSupported returns the ClaimsParameterSupported field value if set, zero value otherwise.
@@ -645,6 +739,34 @@ func (o *OidcConfiguration) SetRegistrationEndpoint(v string) {
 	o.RegistrationEndpoint = &v
 }
 
+// GetPushedAuthorizationRequestEndpoint returns the PushedAuthorizationRequestEndpoint field value if set, zero value otherwise.
+func (o *OidcConfiguration) GetPushedAuthorizationRequestEndpoint() string {
+	if o == nil || IsNil(o.PushedAuthorizationRequestEndpoint) {
+		var ret string
+		return ret
+	}
+	return *o.PushedAuthorizationRequestEndpoint
+}
+
+// GetPushedAuthorizationRequestEndpointOk returns a tuple with the PushedAuthorizationRequestEndpoint field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *OidcConfiguration) GetPushedAuthorizationRequestEndpointOk() (*string, bool) {
+	if o == nil || IsNil(o.PushedAuthorizationRequestEndpoint) {
+		return nil, false
+	}
+	return o.PushedAuthorizationRequestEndpoint, true
+}
+
+// HasPushedAuthorizationRequestEndpoint returns a boolean if a field has been set.
+func (o *OidcConfiguration) HasPushedAuthorizationRequestEndpoint() bool {
+	return o != nil && !IsNil(o.PushedAuthorizationRequestEndpoint)
+}
+
+// SetPushedAuthorizationRequestEndpoint gets a reference to the given string and assigns it to the PushedAuthorizationRequestEndpoint field.
+func (o *OidcConfiguration) SetPushedAuthorizationRequestEndpoint(v string) {
+	o.PushedAuthorizationRequestEndpoint = &v
+}
+
 // GetRequestObjectSigningAlgValuesSupported returns the RequestObjectSigningAlgValuesSupported field value if set, zero value otherwise.
 func (o *OidcConfiguration) GetRequestObjectSigningAlgValuesSupported() []string {
 	if o == nil || IsNil(o.RequestObjectSigningAlgValuesSupported) {
@@ -771,6 +893,34 @@ func (o *OidcConfiguration) HasRequireRequestUriRegistration() bool {
 // SetRequireRequestUriRegistration gets a reference to the given bool and assigns it to the RequireRequestUriRegistration field.
 func (o *OidcConfiguration) SetRequireRequestUriRegistration(v bool) {
 	o.RequireRequestUriRegistration = &v
+}
+
+// GetRequirePushedAuthorizationRequests returns the RequirePushedAuthorizationRequests field value if set, zero value otherwise.
+func (o *OidcConfiguration) GetRequirePushedAuthorizationRequests() bool {
+	if o == nil || IsNil(o.RequirePushedAuthorizationRequests) {
+		var ret bool
+		return ret
+	}
+	return *o.RequirePushedAuthorizationRequests
+}
+
+// GetRequirePushedAuthorizationRequestsOk returns a tuple with the RequirePushedAuthorizationRequests field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *OidcConfiguration) GetRequirePushedAuthorizationRequestsOk() (*bool, bool) {
+	if o == nil || IsNil(o.RequirePushedAuthorizationRequests) {
+		return nil, false
+	}
+	return o.RequirePushedAuthorizationRequests, true
+}
+
+// HasRequirePushedAuthorizationRequests returns a boolean if a field has been set.
+func (o *OidcConfiguration) HasRequirePushedAuthorizationRequests() bool {
+	return o != nil && !IsNil(o.RequirePushedAuthorizationRequests)
+}
+
+// SetRequirePushedAuthorizationRequests gets a reference to the given bool and assigns it to the RequirePushedAuthorizationRequests field.
+func (o *OidcConfiguration) SetRequirePushedAuthorizationRequests(v bool) {
+	o.RequirePushedAuthorizationRequests = &v
 }
 
 // GetResponseModesSupported returns the ResponseModesSupported field value if set, zero value otherwise.
@@ -1072,11 +1222,20 @@ func (o OidcConfiguration) MarshalJSON() ([]byte, error) {
 func (o OidcConfiguration) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["authorization_endpoint"] = o.AuthorizationEndpoint
+	if !IsNil(o.BackchannelAuthenticationEndpoint) {
+		toSerialize["backchannel_authentication_endpoint"] = o.BackchannelAuthenticationEndpoint
+	}
 	if !IsNil(o.BackchannelLogoutSessionSupported) {
 		toSerialize["backchannel_logout_session_supported"] = o.BackchannelLogoutSessionSupported
 	}
 	if !IsNil(o.BackchannelLogoutSupported) {
 		toSerialize["backchannel_logout_supported"] = o.BackchannelLogoutSupported
+	}
+	if !IsNil(o.BackchannelTokenDeliveryModesSupported) {
+		toSerialize["backchannel_token_delivery_modes_supported"] = o.BackchannelTokenDeliveryModesSupported
+	}
+	if !IsNil(o.BackchannelUserCodeParameterSupported) {
+		toSerialize["backchannel_user_code_parameter_supported"] = o.BackchannelUserCodeParameterSupported
 	}
 	if !IsNil(o.ClaimsParameterSupported) {
 		toSerialize["claims_parameter_supported"] = o.ClaimsParameterSupported
@@ -1113,6 +1272,9 @@ func (o OidcConfiguration) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.RegistrationEndpoint) {
 		toSerialize["registration_endpoint"] = o.RegistrationEndpoint
 	}
+	if !IsNil(o.PushedAuthorizationRequestEndpoint) {
+		toSerialize["pushed_authorization_request_endpoint"] = o.PushedAuthorizationRequestEndpoint
+	}
 	if !IsNil(o.RequestObjectSigningAlgValuesSupported) {
 		toSerialize["request_object_signing_alg_values_supported"] = o.RequestObjectSigningAlgValuesSupported
 	}
@@ -1124,6 +1286,9 @@ func (o OidcConfiguration) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.RequireRequestUriRegistration) {
 		toSerialize["require_request_uri_registration"] = o.RequireRequestUriRegistration
+	}
+	if !IsNil(o.RequirePushedAuthorizationRequests) {
+		toSerialize["require_pushed_authorization_requests"] = o.RequirePushedAuthorizationRequests
 	}
 	if !IsNil(o.ResponseModesSupported) {
 		toSerialize["response_modes_supported"] = o.ResponseModesSupported
